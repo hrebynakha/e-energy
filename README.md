@@ -18,8 +18,9 @@ Wants=network.target
 After=network.target
 
 [Service]
+WorkingDirectory=/opt/e-energy
 ExecStartPre=/bin/sleep 1
-ExecStart=/opt/e-energy/venv/bin/python /opt/e-energy/bot.py
+ExecStart=venv/bin/python bot.py
 Restart=always
 
 [Install]
@@ -42,6 +43,6 @@ Run worker.py to process notification  and sync.py to sync inforamtion about ene
 
 crontab -e
 ```
-*/30**** /opt/e-energy/venv/bin/python /opt/e-energy/sync.py # e-energy sync service
-*/15**** /opt/e-energy/venv/bin/python  /opt/e-energy/worker.py # e-energy worker service
+*/30 * * * * cd /opt/e-energy/ && venv/bin/python sync.py # e-energy sync service
+*/15 * * * * cd /opt/e-energy/ && venv/bin/python worker.py # e-energy worker service
 ```
