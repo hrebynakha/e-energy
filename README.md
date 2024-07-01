@@ -4,6 +4,7 @@ BOT_TOKEN=token
 ADMIN_CHAT_ID=adminid
 TIMEOUT=15
 TURN_ON_NOTIFY=True
+ENERGY_BASE_URL=
 ```
 
 Run bot.py as service for pooling
