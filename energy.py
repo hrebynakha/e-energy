@@ -17,6 +17,7 @@ def get_queue_html_info(queue_number):
     
     response = requests.get(url)
     if response.status_code != 200:
+        print(response)
         raise Exception("Cannot get energy info.")
     
     return response.text    
