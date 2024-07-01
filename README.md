@@ -42,6 +42,6 @@ Run worker.py to process notification  and sync.py to sync inforamtion about ene
 
 crontab -e
 ```
-*/30**** /opt/e-energy/venv/bin/python /opt/e-energy/bot.py # e-energy sync service
-*/15**** /opt/e-energy/venv/bin/python  /opt/e-energy/bot.py # e-energy worker service
+*/30**** /opt/e-energy/venv/bin/python /opt/e-energy/sync.py # e-energy sync service
+*/15**** /opt/e-energy/venv/bin/python  /opt/e-energy/worker.py # e-energy worker service
 ```
