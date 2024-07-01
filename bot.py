@@ -1,10 +1,10 @@
 import os
 from dotenv import load_dotenv
-from db import SQLiteDB
 import telebot
-import messages
 from telebot import types
+from db import SQLiteDB
 from init_queue import INIT_QUERIES
+import messages
 
 load_dotenv()
 

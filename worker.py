@@ -1,14 +1,15 @@
 # Process notifications
 import os
-import telebot
+from dotenv import load_dotenv
 from datetime import datetime
-from db import SQLiteDB
+import telebot
 
+from db import SQLiteDB
 import messages 
 
+load_dotenv()
 db = SQLiteDB()
 subs = db.get_subs() 
-
 
 # move to DB ?
 notification_timeout = os.getenv('TIMEOUT')
