@@ -11,8 +11,8 @@ subs = db.get_subs()
 
 
 # move to DB ?
-notification_timeout = 30
-notification_to_on = True
+notification_timeout = os.environ.get('TIMEOUT')
+notification_to_on = os.environ.get('TURN_ON_NOTIFY')
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -35,12 +35,12 @@ def is_need_to_notify(date, ):
 
     if notification_timeout + 1 > minutes_difference > 0 :
         print("Need to notify:")
-        return True
+        return int(minutes_difference)
 
     return False
 
 
-def process_notify(user_id, queue):
+def process_notify(user_id, queue, notify_minutes):
     if queue[4] == 1:
         mark = messages.X_MARK
         after_text = messages.NOTIFICATION_TURN_OFF
@@ -48,7 +48,7 @@ def process_notify(user_id, queue):
         mark = messages.CHECK_MARK
         after_text = messages.NOTIFICATION_TURN_ON
     message = mark +  queue[2] + " " + messages.NOTIFICATION_BEFORE_TEXT + " " +\
-         str(notification_timeout) + " " + after_text
+         str(notify_minutes) + " " + after_text
           
     chat = db.get_user_by_id(user_id)
     bot.send_message(chat[1], message)
@@ -62,10 +62,11 @@ for sub in subs:
         q_info = db.get_queue(sub[2])
         queues[sub[2]] = q_info
     q = queues[sub[2]]
-    if is_need_to_notify(q[3],):
+    notify_minutes = is_need_to_notify(q[3],)
+    if notify_minutes:
         if notification_to_on == True or q[4] == 1:
             print("Processing notification...")
-            process_notify(sub[1], q)
+            process_notify(sub[1], q, notify_minutes)
     
 
 
