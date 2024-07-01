@@ -1,7 +1,7 @@
 INIT_QUERIES = [
 '''
 INSERT INTO queue (number, name, next_time, is_on)
-VALUES (1, 'Перша черга', '', False')
+VALUES (1, 'Перша черга', '', False)
 ''',
 '''
 INSERT INTO queue (number, name, next_time, is_on)
