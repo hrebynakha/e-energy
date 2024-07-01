@@ -20,7 +20,7 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/e-energy
 ExecStartPre=/bin/sleep 1
-ExecStart=venv/bin/python bot.py
+ExecStart=/opt/e-energy/venv/bin/python bot.py
 Restart=always
 
 [Install]
