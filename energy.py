@@ -1,8 +1,12 @@
+import os
+from dotenv import load_dotenv
+import re
 import requests
 from bs4 import BeautifulSoup
-import re
 
-ENERGY_BASE_URL = 'https://energy-ua.info/cherga/'
+load_dotenv()
+
+ENERGY_BASE_URL = os.getenv('ENERGY_BASE_URL')
 DEBUG = False
 
 def get_queue_html_info(queue_number):
