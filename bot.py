@@ -1,12 +1,17 @@
 import os
+from dotenv import load_dotenv
 from db import SQLiteDB
 import telebot
 import messages
 from telebot import types
 from init_queue import INIT_QUERIES
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-ADMIN_CHAT_ID = os.environ.get('ADMIN_CHAT_ID')
+load_dotenv()
+
+
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
 bot = telebot.TeleBot(BOT_TOKEN)
 
 

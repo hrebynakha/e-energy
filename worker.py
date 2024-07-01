@@ -11,9 +11,9 @@ subs = db.get_subs()
 
 
 # move to DB ?
-notification_timeout = os.environ.get('TIMEOUT')
-notification_to_on = os.environ.get('TURN_ON_NOTIFY')
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
+notification_timeout = os.getenv('TIMEOUT')
+notification_to_on = os.getenv('TURN_ON_NOTIFY')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
 queues = {}
