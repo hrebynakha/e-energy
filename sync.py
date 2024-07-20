@@ -1,13 +1,31 @@
-from energy import get_queue_info
+from datetime import datetime
+from poe import get_queue_info, print_queue_info
 from db import SQLiteDB
 
+DEBUG = False #True
+current_date = datetime.now()
+
+
+def find_next_change_time(q):
+    for time_ in q:
+        if time_ > current_date:
+            break
+        prev_time = time_
+    return time_, prev_time
+
 db = SQLiteDB()
+db.create_tables()
 queues = db.get_queues()
-
+queues_info = get_queue_info()
 for q in queues:
-    q_num, queue_info = get_queue_info(q[1])
-    print("Processing q,", q, queue_info)
-    db.update_queue(queue_info["date"], queue_info["state_now"], q_num)
-
+    q_num = str(q[1])
+    queue_info = queues_info[q_num]
+    next_time_, curent_time_= find_next_change_time(queue_info)
+    if DEBUG:
+        print(20*"=", q_num + 20*"=")
+        print_queue_info(queues_info, q_num)
+    state = queue_info[next_time_]
+    state_now = queue_info[curent_time_]
+    db.update_queue(next_time_ , state['value'], curent_time_, state_now['value'], q_num)
 
 db.close_connection()

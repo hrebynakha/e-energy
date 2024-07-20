@@ -22,14 +22,23 @@ class SQLiteDB:
         # Execute table creation SQL statements
         self.cursor.execute(create_users_table)
         self.conn.commit()
+        
+        #update_queue_table = '''
+        #    ALTER TABLE queue
+        #        ADD current_state BOOLEAN
+        #'''
+        #self.cursor.execute(update_queue_table)
+        #self.conn.commit()
 
         create_queue_table = '''
             CREATE TABLE IF NOT EXISTS queue (
                 id INTEGER PRIMARY KEY,
                 number INTEGER,
                 name TEXT,
+                current_time TEXT,
+                current_state BOOLEAN,
                 next_time TEXT,
-                is_on BOOLEAN
+                next_state BOOLEAN
             )
         '''
         self.cursor.execute(create_queue_table)
@@ -47,23 +56,26 @@ class SQLiteDB:
         self.cursor.execute(create_subs_table)
         self.conn.commit()
 
+
     def create_queue(self, queue_query):
         self.cursor.execute(queue_query)
         self.conn.commit()
 
     def get_queues(self, ):
         self.cursor.execute('''
-            SELECT id,number,name,next_time,is_on FROM queue
+            SELECT id,number,name,next_time,next_state FROM queue
         ''')
         return self.cursor.fetchall()
-    def update_queue(self, next_time, is_on, number):
+    def update_queue(self, next_time, next_state, current_time, current_state, number):
         self.cursor.execute('''
             UPDATE queue 
             SET next_time = ?,
-                is_on = ?
+                next_state = ?,
+                current_time = ?,
+                current_state = ?
             WHERE
                 number = ?
-        ''', (next_time, is_on, number))
+        ''', (next_time, next_state, current_time, current_state, number))
         self.conn.commit()
 
     def get_queue(self, queue_id):

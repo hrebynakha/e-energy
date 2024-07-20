@@ -22,7 +22,7 @@ queues = {}
 
 def is_need_to_notify(date, ):
     time_now = datetime.now()
-    date_format = '%m/%d/%Y %H:%M:%S'
+    date_format = '%Y-%m-%d %H:%M:%S'
 
     # Convert the date string to a datetime object
     datetime_object = datetime.strptime(date, date_format)
@@ -34,44 +34,51 @@ def is_need_to_notify(date, ):
     # Print the difference in minutes
     print("Difference in minutes:", minutes_difference)
 
-    if notification_timeout + 1 > minutes_difference > 0 :
+    if int(notification_timeout) + 1 > minutes_difference > 0 :
         print("Need to notify:")
         return int(minutes_difference)
 
     return False
 
 
-def process_notify(user_id, queue, notify_minutes):
-    if queue[4] == 1:
+def process_notify(user_id, q_name, is_turn_on, notify_minutes):
+    if is_turn_on == 0:
         mark = messages.X_MARK
         after_text = messages.NOTIFICATION_TURN_OFF
     else:
         mark = messages.CHECK_MARK
         after_text = messages.NOTIFICATION_TURN_ON
-    message = mark +  queue[2] + " " + messages.NOTIFICATION_BEFORE_TEXT + " " +\
+    message = mark +  q_name + " " + messages.NOTIFICATION_BEFORE_TEXT + " " +\
          str(notify_minutes) + " " + after_text
           
     chat = db.get_user_by_id(user_id)
     bot.send_message(chat[1], message)
 
-    
 
+if not subs:
+    print("Subscribers not found.")
 
 for sub in subs:
-    print("Processing sub", sub)
-    if sub[2] not in queues:
-        q_info = db.get_queue(sub[2])
-        queues[sub[2]] = q_info
-    q = queues[sub[2]]
-    notify_minutes = is_need_to_notify(q[3],)
-    if notify_minutes:
-        if notification_to_on == True or q[4] == 1:
-            print("Processing notification...")
-            process_notify(sub[1], q, notify_minutes)
+    user_id, q_id = sub[1], sub[2]
+
+    if q_id not in queues:
+        q_info = db.get_queue(q_id)
+        queues[q_id] = q_info
+    q = queues[q_id]
+    q_name = q[2]
+    current_state = q[4]
+    next_change_mark_is_on = q[6]
+    next_change_time = q[5]
+    if current_state  ==  next_change_mark_is_on:
+        # nothing changing
+        continue
     
-
-
-print(queues)
+    notify_minutes = is_need_to_notify(next_change_time ,)
+    if notify_minutes:
+        if notification_to_on == True or next_change_mark_is_on == 0:
+           print("Processing notification...")
+           process_notify(user_id, q_name, next_change_mark_is_on, notify_minutes)
+    
 db.close_connection()
 
 

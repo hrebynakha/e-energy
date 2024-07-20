@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import telebot
 from telebot import types
 from db import SQLiteDB
-from init_queue import INIT_QUERIES
+from init_queue import INIT_QUERIES, RUN_QUERY 
 import messages
 
 load_dotenv()
@@ -107,6 +107,14 @@ def send_update(message):
     for query in INIT_QUERIES:
         db.create_queue(query)
     bot.reply_to(message, messages.ADMIN_UPDATE)
+
+@bot.message_handler(commands=['sql'])
+def send_update(message):
+    check_permissisons(message.chat.id, 'admin')
+    chat = get_chat(message)
+    db.create_queue(RUN_QUERY)
+    bot.reply_to(message, messages.ADMIN_UPDATE)
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):

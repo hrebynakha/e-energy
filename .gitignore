@@ -3,3 +3,4 @@ db.sqlite3
 venv
 __pycache__
 test.html
+data.bin
