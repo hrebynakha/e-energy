@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 import telebot
-
 from db import SQLiteDB
 import messages 
 
@@ -13,7 +12,7 @@ subs = db.get_subs()
 
 # move to DB ?
 notification_timeout = os.getenv('TIMEOUT')
-notification_to_on = os.getenv('TURN_ON_NOTIFY')
+notification_to_on = bool(os.getenv('TURN_ON_NOTIFY'))
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -54,10 +53,19 @@ def process_notify(user_id, q_name, is_turn_on, notify_minutes):
     chat = db.get_user_by_id(user_id)
     bot.send_message(chat[1], message)
 
+def chnages_notify(user_id, ):
+    message = messages.CHANGES_POE
+    chat = db.get_user_by_id(user_id)
+    bot.send_message(chat[1], message)
+
 
 if not subs:
     print("Subscribers not found.")
 
+is_updated = False
+updated = db.get_global_info(name='is_updated')
+if updated[2] == "Updated":
+    is_updated = True
 for sub in subs:
     user_id, q_id = sub[1], sub[2]
 
@@ -72,12 +80,15 @@ for sub in subs:
     if current_state  ==  next_change_mark_is_on:
         # nothing changing
         continue
-    
-    notify_minutes = is_need_to_notify(next_change_time ,)
+    notify_minutes = is_need_to_notify(next_change_time, )
     if notify_minutes:
-        if notification_to_on == True or next_change_mark_is_on == 0:
+        if notification_to_on or next_change_mark_is_on == 0:
            print("Processing notification...")
            process_notify(user_id, q_name, next_change_mark_is_on, notify_minutes)
+        else:
+            print("Not notify, ON:", notification_to_on, "next:", next_change_mark_is_on)
+    if is_updated:
+        chnages_notify(user_id, )
     
 db.close_connection()
 

@@ -15,8 +15,13 @@ def find_next_change_time(q):
 
 db = SQLiteDB()
 db.create_tables()
+db.set_global_info(new_value='Updated', name='is_updated')
 queues = db.get_queues()
-queues_info = get_queue_info()
+queues_info, is_updated = get_queue_info()
+if is_updated:
+    db.set_global_info(new_value='Updated', name='is_updated')
+else:
+    db.set_global_info(new_value='Not updated', name='is_updated')
 for q in queues:
     q_num = str(q[1])
     queue_info = queues_info[q_num]

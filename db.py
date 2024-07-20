@@ -56,16 +56,28 @@ class SQLiteDB:
         self.cursor.execute(create_subs_table)
         self.conn.commit()
 
-
-    def create_queue(self, queue_query):
-        self.cursor.execute(queue_query)
+        create_global_table = '''
+            CREATE TABLE IF NOT EXISTS global (
+                id INTEGER PRIMARY KEY,
+                name INTEGER,
+                value TEXT
+            )
+        '''
+        self.cursor.execute(create_global_table)
         self.conn.commit()
+
+
+    def run_query(self, query):
+        self.cursor.execute(query)
+        self.conn.commit()
+        return self.cursor.fetchall()
 
     def get_queues(self, ):
         self.cursor.execute('''
             SELECT id,number,name,next_time,next_state FROM queue
         ''')
         return self.cursor.fetchall()
+    
     def update_queue(self, next_time, next_state, current_time, current_state, number):
         self.cursor.execute('''
             UPDATE queue 
@@ -83,6 +95,20 @@ class SQLiteDB:
             SELECT * FROM queue WHERE id = ?
         ''', (queue_id,))
         return self.cursor.fetchone()
+
+    def get_global_info(self, name):
+        self.cursor.execute('''
+            SELECT * FROM global WHERE name = ?
+        ''', (name,))
+        return self.cursor.fetchone()
+    
+    def set_global_info(self, new_value, name):
+        self.cursor.execute('''
+            UPDATE global
+            SET value = ?
+            WHERE name = ?
+        ''', (new_value, name,))
+        self.conn.commit()
 
     def close_connection(self):
         self.conn.close()

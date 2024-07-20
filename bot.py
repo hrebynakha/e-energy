@@ -105,15 +105,22 @@ def send_update(message):
     check_permissisons(message.chat.id, 'admin')
     chat = get_chat(message)
     for query in INIT_QUERIES:
-        db.create_queue(query)
+        db.run_query(query)
     bot.reply_to(message, messages.ADMIN_UPDATE)
 
 @bot.message_handler(commands=['sql'])
 def send_update(message):
     check_permissisons(message.chat.id, 'admin')
     chat = get_chat(message)
-    db.create_queue(RUN_QUERY)
-    bot.reply_to(message, messages.ADMIN_UPDATE)
+    sql_text = message.text[4:]
+    try:
+        info = db.run_query(sql_text)
+        result = "<code>" + str(info) + "</code>\n"
+        msg = messages.ADMIN_RUN
+    except Exception as e:
+        result = "<code>" + str(e) + "</code>\n"
+        msg = messages.ADMIN_FAIL
+    bot.reply_to(message, result + msg, parse_mode='html')
 
 
 @bot.callback_query_handler(func=lambda call: True)

@@ -34,17 +34,25 @@ ENDC = '\033[0m'
 FILE_NAME = "data.bin"
 
 
+
 def load_data():
     with open(FILE_NAME, "rb") as fh:
         data = pickle.load(fh)
     return data
 
+def save_data(data):
+    with open(FILE_NAME, "wb") as fh:
+        pickle.dump(data, fh)
+
+try:
+    data = load_data()
+except FileNotFoundError:
+    data = {'html' : None, 'table': None}
+
 def get_queue_html_info():
     url  = ENERGY_BASE_URL
-    try:
-        html = load_data()
-    except FileNotFoundError:
-        html = None
+    is_updated = False
+    html = data['html']
      
     if DEBUG == True:
         logging.info("debug mode")
@@ -56,10 +64,11 @@ def get_queue_html_info():
         # Now html_content contains the entire HTML file as a string
         if html != html_content:
             print("UPDATED")
-            with open(FILE_NAME, "wb") as fh:
-                pickle.dump(html_content, fh)
-        return html_content
-    print( OKGREEN + "PROD" + ENDC)
+            is_updated = True
+            data['html'] = html_content
+        return html_content, is_updated
+    
+    print( OKGREEN + "[PROD]" + ENDC)
     try:
         # Open a web page
         driver.get(url)
@@ -71,10 +80,10 @@ def get_queue_html_info():
         # Interact with the element (example: clicking a button)
         element_html = element.get_attribute('outerHTML')
         if html != element_html:
-            print(OKGREEN + "UPDATED" + ENDC)
-            with open(FILE_NAME, "wb") as fh:
-                pickle.dump(element_html, fh)
-        return element_html
+            is_updated = True
+            data['html'] = element_html
+            print(OKGREEN + "[UPDATED]" + ENDC)
+        return element_html, is_updated
     finally:
         # Close the browser
         driver.quit()
@@ -121,11 +130,8 @@ def parce_html(html):
                 specific_datetime_next = specific_datetime + timedelta(minutes=30)
                 n = n +1
                 #i = i+1
-                
+    data['table'] = result
     return result
-
-
-
 
 
 def print_queue_info(q_info, queue_number):
@@ -138,9 +144,13 @@ def print_queue_info(q_info, queue_number):
         print(text)
 
 def get_queue_info():
-    html = get_queue_html_info()
-    q_info = parce_html(html=html)
-    return q_info
+    html, is_updated = get_queue_html_info()
+    if is_updated:
+        q_info = parce_html(html=html)
+        save_data(data)
+    else:
+        q_info = data['table']
+    return q_info, is_updated
 
 if __name__ == "__main__":
     html = get_queue_html_info()
