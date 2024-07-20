@@ -5,7 +5,8 @@ from telebot import types
 from db import SQLiteDB
 from init_queue import INIT_QUERIES, RUN_QUERY 
 import messages
-
+from poe import load_data
+from handlers import get_schedule_message, get_schedule_detail
 load_dotenv()
 
 
@@ -13,6 +14,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
 bot = telebot.TeleBot(BOT_TOKEN)
+
 
 
 def check_permissisons(chat_id, permission_requried):
@@ -109,7 +111,7 @@ def send_update(message):
     bot.reply_to(message, messages.ADMIN_UPDATE)
 
 @bot.message_handler(commands=['sql'])
-def send_update(message):
+def send_sql(message):
     check_permissisons(message.chat.id, 'admin')
     chat = get_chat(message)
     sql_text = message.text[4:]
@@ -122,6 +124,46 @@ def send_update(message):
         msg = messages.ADMIN_FAIL
     bot.reply_to(message, result + msg, parse_mode='html')
 
+
+@bot.message_handler(commands=['show'])
+def send_schedule(message):
+    chat = get_chat(message)
+    user_id = str(chat[0])
+    subs = db.get_subs_by_user(user_id)
+    for sub in subs:
+        sub_id, _, sub_q_name = sub
+        msg = get_schedule_message(str(sub_q_name))
+        bot.reply_to(message, msg, parse_mode='html')
+
+@bot.message_handler(commands=['detail'])
+def send_schedule_detail(message):
+    chat = get_chat(message)
+    user_id = str(chat[0])
+    subs = db.get_subs_by_user(user_id)
+    for sub in subs:
+        sub_id, _, sub_q_name = sub
+        msg = get_schedule_detail(str(sub_q_name))
+        bot.reply_to(message, msg, parse_mode='html')
+
+@bot.message_handler(commands=['all'])
+def send_schedule_all(message):
+    chat = get_chat(message)
+    user_id = str(chat[0])
+    subs = db.get_subs_by_user(user_id)
+    for sub in subs:
+        sub_id, _, sub_q_name = sub
+        msg = get_schedule_message(str(sub_q_name))
+        bot.reply_to(message, msg, parse_mode='html')
+
+@bot.message_handler(commands=['detailall'])
+def send_schedule_detailall(message):
+    chat = get_chat(message)
+    user_id = str(chat[0])
+    subs = db.get_subs_by_user(user_id)
+    for sub in subs:
+        sub_id, _, sub_q_name = sub
+        msg = get_schedule_detail(str(sub_q_name), hours=24)
+        bot.reply_to(message, msg, parse_mode='html')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
