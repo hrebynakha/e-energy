@@ -35,7 +35,7 @@ def is_need_to_notify(date, ):
 
     if int(notification_timeout) + 1 > minutes_difference > 0 :
         print("Need to notify:")
-        return int(minutes_difference)
+        return int(minutes_difference + 1)
 
     return False
 
