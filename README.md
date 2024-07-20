@@ -35,14 +35,10 @@ Check status:
 Start if needed:
 
 ```
-systemctl start energybot.service`
+systemctl start energybot.service
 ```
 
-
-
-Run worker.py to process notification  and sync.py to sync inforamtion about energy
-
-crontab -e
+Run worker.py to process notification and sync.py to sync information about energy schedule. Schedule it using cron: `crontab -e`
 ```
 */30 * * * * cd /opt/e-energy/ && venv/bin/python sync.py # e-energy sync service
 */15 * * * * cd /opt/e-energy/ && venv/bin/python worker.py # e-energy worker service
