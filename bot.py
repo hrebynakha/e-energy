@@ -152,7 +152,7 @@ def send_schedule_all(message):
     subs = db.get_subs_by_user(user_id)
     for sub in subs:
         sub_id, _, sub_q_name = sub
-        msg = get_schedule_message(str(sub_q_name))
+        msg = get_schedule_message(str(sub_q_name), hours=24)
         bot.reply_to(message, msg, parse_mode='html')
 
 @bot.message_handler(commands=['detailall'])

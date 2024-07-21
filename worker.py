@@ -66,6 +66,7 @@ is_updated = False
 updated = db.get_global_info(name='is_updated')
 if updated[2] == "Updated":
     is_updated = True
+
 for sub in subs:
     user_id, q_id = sub[1], sub[2]
 
@@ -87,6 +88,7 @@ for sub in subs:
            process_notify(user_id, q_name, next_change_mark_is_on, notify_minutes)
         else:
             print("Not notify, ON:", notification_to_on, "next:", next_change_mark_is_on)
+    
     if is_updated:
         chnages_notify(user_id, )
     
