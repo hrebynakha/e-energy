@@ -5,7 +5,6 @@ from telebot import types
 from db import SQLiteDB
 from init_queue import INIT_QUERIES, RUN_QUERY 
 import messages
-from poe import load_data
 from handlers import get_schedule_message, get_schedule_detail
 load_dotenv()
 
@@ -171,6 +170,8 @@ def callback_handler(call):
         queue_id = call.data.split('_')[2]
         queue = db.get_queue(queue_id)
         chat = get_chat(call.message)
+        if not chat:
+            print("Chat not found by call", call)
         sub = db.get_sub_by_user_q(chat[0], queue[0])
         if sub:
             reply_text = messages.ALREDY_SUBSCRIBE_TEXT + '. ' + messages.SUB_COMMAND_TEXT
