@@ -1,3 +1,4 @@
+import argparse
 import telebot
 from telebot import types
 from energybot import config
@@ -5,16 +6,27 @@ from energybot.db.sqlite import SQLiteDB
 from energybot.db.init_queue import INIT_QUERIES
 from energybot.helpers import messages
 from energybot.handlers.process import get_schedule_message, get_schedule_detail
+from energybot.tasks.worker import run_worker
+from energybot.tasks.sync import run_sync
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--run', help='Enter usage command')
+args = parser.parse_args()
 
 ADMIN_CHAT_ID = config.ADMIN_CHAT_ID
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
 db = SQLiteDB()
 
-def main():
-    db.create_tables()
-    bot.infinity_polling()
-    db.close_connection()
+def main(args):
+    if args.run == 'sync':
+        run_sync()
+    elif args.run == 'worker':
+        run_worker()
+    else:
+        db.create_tables()
+        bot.infinity_polling()
+        db.close_connection()
 
 def check_permissisons(chat_id, permission_requried):
     if permission_requried == 'admin':

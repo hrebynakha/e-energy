@@ -81,11 +81,10 @@ def parce_html(html):
                 result[queue_num] = time_dict
                 specific_datetime = datetime.combine(current_date, time(0, 0, 0))
                 specific_datetime_next = specific_datetime + timedelta(minutes=30)
-                i, n = 1, 1
+                n = 1
                 continue
 
             if queue_num in result:
-                #if i % 2 == 0:
                 td_class = q.get('class')
                 if td_class  == ['light_on']:
                     current_value = "ON"
@@ -101,8 +100,7 @@ def parce_html(html):
                 specific_datetime = specific_datetime_next
                 specific_datetime_next = specific_datetime + timedelta(minutes=30)
                 n = n +1
-                #i = i+1
-    if data['table'] == result:
+    if data['table'] != result:
         is_updated = True
         data['table'] = result
         save_data(data)
