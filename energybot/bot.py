@@ -1,20 +1,20 @@
-import os
-from dotenv import load_dotenv
 import telebot
 from telebot import types
-from db import SQLiteDB
-from init_queue import INIT_QUERIES, RUN_QUERY 
-import messages
-from handlers import get_schedule_message, get_schedule_detail
-load_dotenv()
+from energybot import config
+from energybot.db.sqlite import SQLiteDB
+from energybot.db.init_queue import INIT_QUERIES
+from energybot.helpers import messages
+from energybot.handlers.process import get_schedule_message, get_schedule_detail
 
+ADMIN_CHAT_ID = config.ADMIN_CHAT_ID
 
+bot = telebot.TeleBot(config.BOT_TOKEN)
+db = SQLiteDB()
 
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
-bot = telebot.TeleBot(BOT_TOKEN)
-
-
+def main():
+    db.create_tables()
+    bot.infinity_polling()
+    db.close_connection()
 
 def check_permissisons(chat_id, permission_requried):
     if permission_requried == 'admin':
@@ -196,13 +196,9 @@ def callback_handler(call):
 @bot.message_handler(func=lambda msg: True)
 def echo_all(message):
     chat = get_chat(message)
-
     bot.reply_to(message, message.text)
 
 
-
 if __name__ == '__main__':
-    db = SQLiteDB()
-    db.create_tables()
-    bot.infinity_polling()
-    db.close_connection()
+    main()
+    

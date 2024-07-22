@@ -1,8 +1,12 @@
 from datetime import datetime
-from poe import get_queue_info, print_queue_info
-from db import SQLiteDB
+import importlib
+from energybot.db.sqlite import SQLiteDB
+from energybot import config
 
-DEBUG = False #True
+provider_module_name = f"providers.{config.PROVIDER}"
+provider = importlib.import_module(provider_module_name)
+
+DEBUG = config.DEBUG
 current_date = datetime.now()
 
 
@@ -15,9 +19,8 @@ def find_next_change_time(q):
 
 db = SQLiteDB()
 db.create_tables()
-db.set_global_info(new_value='Updated', name='is_updated')
 queues = db.get_queues()
-queues_info, is_updated = get_queue_info()
+queues_info, is_updated = provider.get_queue_info()
 if is_updated:
     db.set_global_info(new_value='Updated', name='is_updated')
 else:
@@ -28,7 +31,7 @@ for q in queues:
     next_time_, curent_time_= find_next_change_time(queue_info)
     if DEBUG:
         print(20*"=", q_num + 20*"=")
-        print_queue_info(queues_info, q_num)
+        provider.print_queue_info(queues_info, q_num)
     state = queue_info[next_time_]
     state_now = queue_info[curent_time_]
     db.update_queue(next_time_ , state['value'], curent_time_, state_now['value'], q_num)

@@ -24,12 +24,3 @@ INSERT INTO queue (number, name, current_time, current_state, next_time, next_st
 VALUES (6, 'Шоста черга', '', False, '', False)
 '''
 ]
-
-
-RUN_QUERY = '''
-UPDATE queue 
-SET 
-    is_on = False
-WHERE
-    number = 5
-'''

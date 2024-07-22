@@ -1,5 +1,5 @@
 import sqlite3
-from models import User
+from energybot.db.models import User
 
 class SQLiteDB:
     def __init__(self, db_name='db.sqlite3'):

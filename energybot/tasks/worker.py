@@ -1,22 +1,19 @@
 # Process notifications
-import os
-from dotenv import load_dotenv
 from datetime import datetime
 import telebot
-from db import SQLiteDB
-import messages 
+from energybot.db.sqlite import SQLiteDB
+import energybot.helpers.messages as messages 
+from energybot import config
 
-load_dotenv()
+
+
+notification_timeout = config.TIMEOUT
+notification_to_on  = config.TURN_ON_NOTIFY
+bot = telebot.TeleBot(config.BOT_TOKEN)
+queues = {}
+
 db = SQLiteDB()
 subs = db.get_subs() 
-
-# move to DB ?
-notification_timeout = os.getenv('TIMEOUT')
-notification_to_on = bool(os.getenv('TURN_ON_NOTIFY'))
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-bot = telebot.TeleBot(BOT_TOKEN)
-
-queues = {}
 
 
 def is_need_to_notify(date, ):
@@ -93,5 +90,3 @@ for sub in subs:
         chnages_notify(user_id, )
     
 db.close_connection()
-
-

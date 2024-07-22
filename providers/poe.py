@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, time, timedelta
 from bs4 import BeautifulSoup
-import pickle
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -12,6 +12,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+
+from energybot.helpers.data import load_data, save_data
+from energybot import config
 # Specify the path to the chromedriver executable
 chrome_options = Options()
 chrome_options.add_argument('--headless')
@@ -24,37 +27,25 @@ service = Service(ChromeDriverManager().install())  # Path to your chromedriver
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 load_dotenv()
-ENERGY_BASE_URL = os.getenv('POE_URL')
-DEBUG = True if os.getenv('DEBUG') == 'True' else False
+
 
 OKGREEN = '\033[92m'
 FAIL = '\033[91m'
 ENDC = '\033[0m'
 
-FILE_NAME = "data.bin"
 
 
-
-def load_data():
-    with open(FILE_NAME, "rb") as fh:
-        data = pickle.load(fh)
-    return data
-
-def save_data(data):
-    with open(FILE_NAME, "wb") as fh:
-        pickle.dump(data, fh)
 
 try:
     data = load_data()
 except FileNotFoundError:
-    data = {'html' : None, 'table': None}
+    data = {'table': None}
 
 def get_queue_html_info():
-    url  = ENERGY_BASE_URL
+    url  = config.PROVIDER_URL
     is_updated = False
-    html = data['html']
-     
-    if DEBUG == True:
+
+    if config.DEBUG == True:
         logging.info("debug mode")
         print("DEBUG")
         with open("test.html", 'r', encoding='utf-8') as file:
@@ -65,7 +56,6 @@ def get_queue_html_info():
         if html != html_content:
             print("UPDATED")
             is_updated = True
-            data['html'] = html_content
         return html_content, is_updated
     
     print( OKGREEN + "[PROD]" + ENDC)
@@ -81,13 +71,11 @@ def get_queue_html_info():
         element_html = element.get_attribute('outerHTML')
         if html != element_html:
             is_updated = True
-            data['html'] = element_html
             print(OKGREEN + "[UPDATED]" + ENDC)
         return element_html, is_updated
     finally:
         # Close the browser
         driver.quit()
-
 
 
 def parce_html(html):
@@ -153,6 +141,6 @@ def get_queue_info():
     return q_info, is_updated
 
 if __name__ == "__main__":
-    html = get_queue_html_info()
+    html, is_updated = get_queue_html_info()
     q_info = parce_html(html=html)
     print_queue_info(q_info, '5')

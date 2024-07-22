@@ -1,5 +1,8 @@
+import importlib
 from datetime import datetime, timedelta
-from poe import load_data
+from energybot import config
+from energybot.helpers.data import load_data
+
 
 def get_schedule_message(q_num, hours=4):
     data = load_data()
