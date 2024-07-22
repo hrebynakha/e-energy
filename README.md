@@ -1,13 +1,39 @@
+Energy bot to work with differents energy providers
+- poe
+- energy_ua (old-version)
+
+
+## Energy providers configuration
+
+**You can add own energy provider**
+
+- create energy provider worker in providers folder for example **poe.py**
+- this provider must contains two function:
+  - **get_queue_info()** - for get current info about queue
+  - **print_queue_info()** for prin info about queue to console (for debugging) 
+- provider must use load_data() and save_data() function for bot working correctly with other modules
+- you can use html parce to get info about queue and output this data to dict format like:
+```
+specific_datetime = {
+  'text': 'OFF/ON',
+  'id':n,
+  'value': False/True
+}
+```
+## Bot configuration
+
 Create .env file
 ```
 BOT_TOKEN=token
 ADMIN_CHAT_ID=adminid
 TIMEOUT=15
 TURN_ON_NOTIFY=True
-ENERGY_BASE_URL=
+PROVIDER=
+PROVIDER_URL=
 ```
 
-Run bot.py as service for pooling
+Run **bot** as service for pooling
+
 Loggin as root to the VM:
   `systemctl edit --force --full energybot.service`
 
@@ -21,7 +47,7 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/e-energy
 ExecStartPre=/bin/sleep 1
-ExecStart=/opt/e-energy/venv/bin/python bot.py
+ExecStart=/opt/e-energy/venv/bin/energybot
 Restart=always
 
 [Install]
@@ -38,8 +64,8 @@ Start if needed:
 systemctl start energybot.service
 ```
 
-Run worker.py to process notification and sync.py to sync information about energy schedule. Schedule it using cron: `crontab -e`
+Run worker to process notification and sync to sync information about energy schedule. Schedule it using cron: `crontab -e`
 ```
-*/30 * * * * cd /opt/e-energy/ && venv/bin/python sync.py # e-energy sync service
-*/15 * * * * cd /opt/e-energy/ && venv/bin/python worker.py # e-energy worker service
+*/30 * * * * cd /opt/e-energy/ && venv/bin/energybot --run sync # e-energy sync service
+*/15 * * * * cd /opt/e-energy/ && venv/bin/energybot --run worker # e-energy worker service
 ```

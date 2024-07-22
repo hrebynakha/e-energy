@@ -61,7 +61,6 @@ def get_queue_html_info():
         # Close the browser
         driver.quit()
 
-
 def parce_html(html):
     is_updated = False
     soup = BeautifulSoup(html, 'html.parser')
