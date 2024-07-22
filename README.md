@@ -1,7 +1,11 @@
 Energy bot to work with differents energy providers
 - poe
 - energy_ua (old-version)
+## Simple installation via **pypip**
 
+```
+pip install energybot
+```
 
 ## Energy providers configuration
 
