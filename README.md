@@ -84,10 +84,16 @@ Run worker to process notification and sync to sync information about energy sch
 
 
 ### Main bot commands
-`/start` - show satrt information to user with list of queues in databes, user can subsribe to some queue notify using this command 
+`/start` - show satrt information to user with list of queues in databes, user can subsribe to some queue notify using this command
+![start](./img/start.png)
 
-`/remove` - remove notify by queue
+`/remove` - remove notify by queue, show current queue subscribes
 
+`all` - show all information about day energy on\off schedule
+![all](./img/all.png)
+
+`detail` - show detail info (like in energy provider table)
+![detail](./img/detail.png)
 ...
 
 ### Messages
@@ -95,7 +101,3 @@ Run worker to process notification and sync to sync information about energy sch
 All base messages described here:
 [messages.py](energybot/helpers/messages.py)
 This messages using to send some information to user \ or make notifications
-
-
-
-
