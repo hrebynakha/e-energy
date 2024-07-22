@@ -1,7 +1,5 @@
 # https://www.poe.pl.ua/disconnection/power-outages/
 import logging
-import os
-from dotenv import load_dotenv
 from datetime import datetime, time, timedelta
 from bs4 import BeautifulSoup
 
@@ -26,14 +24,10 @@ chrome_options.add_argument('--disable-gpu')
 service = Service(ChromeDriverManager().install())  # Path to your chromedriver
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
-load_dotenv()
-
 
 OKGREEN = '\033[92m'
 FAIL = '\033[91m'
 ENDC = '\033[0m'
-
-
 
 
 try:
@@ -43,20 +37,13 @@ except FileNotFoundError:
 
 def get_queue_html_info():
     url  = config.PROVIDER_URL
-    is_updated = False
-
     if config.DEBUG == True:
         logging.info("debug mode")
         print("DEBUG")
         with open("test.html", 'r', encoding='utf-8') as file:
         # Read the entire content of the file into a string
             html_content = file.read()
-
-        # Now html_content contains the entire HTML file as a string
-        if html != html_content:
-            print("UPDATED")
-            is_updated = True
-        return html_content, is_updated
+        return html_content
     
     print( OKGREEN + "[PROD]" + ENDC)
     try:
@@ -69,16 +56,14 @@ def get_queue_html_info():
         )
         # Interact with the element (example: clicking a button)
         element_html = element.get_attribute('outerHTML')
-        if html != element_html:
-            is_updated = True
-            print(OKGREEN + "[UPDATED]" + ENDC)
-        return element_html, is_updated
+        return element_html
     finally:
         # Close the browser
         driver.quit()
 
 
 def parce_html(html):
+    is_updated = False
     soup = BeautifulSoup(html, 'html.parser')
     table = soup.find('tbody')
     if not table:
@@ -118,9 +103,11 @@ def parce_html(html):
                 specific_datetime_next = specific_datetime + timedelta(minutes=30)
                 n = n +1
                 #i = i+1
-    data['table'] = result
-    return result
-
+    if data['table'] == result:
+        is_updated = True
+        data['table'] = result
+        save_data(data)
+    return result, is_updated
 
 def print_queue_info(q_info, queue_number):
     queue = q_info[queue_number]
@@ -132,15 +119,11 @@ def print_queue_info(q_info, queue_number):
         print(text)
 
 def get_queue_info():
-    html, is_updated = get_queue_html_info()
-    if is_updated:
-        q_info = parce_html(html=html)
-        save_data(data)
-    else:
-        q_info = data['table']
+    html = get_queue_html_info()
+    q_info, is_updated = parce_html(html=html)
     return q_info, is_updated
 
 if __name__ == "__main__":
-    html, is_updated = get_queue_html_info()
-    q_info = parce_html(html=html)
+    html = get_queue_html_info()
+    q_info, is_updated = parce_html(html=html)
     print_queue_info(q_info, '5')

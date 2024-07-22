@@ -9,12 +9,11 @@ from energybot import config
 
 notification_timeout = config.TIMEOUT
 notification_to_on  = config.TURN_ON_NOTIFY
-bot = telebot.TeleBot(config.BOT_TOKEN)
+
 queues = {}
 
+bot = telebot.TeleBot(config.BOT_TOKEN)
 db = SQLiteDB()
-subs = db.get_subs() 
-
 
 def is_need_to_notify(date, ):
     time_now = datetime.now()
@@ -36,7 +35,6 @@ def is_need_to_notify(date, ):
 
     return False
 
-
 def process_notify(user_id, q_name, is_turn_on, notify_minutes):
     if is_turn_on == 0:
         mark = messages.X_MARK
@@ -55,38 +53,42 @@ def chnages_notify(user_id, ):
     chat = db.get_user_by_id(user_id)
     bot.send_message(chat[1], message)
 
+def run_worker():
+    subs = db.get_subs() 
+    if not subs:
+        print("Subscribers not found.")
 
-if not subs:
-    print("Subscribers not found.")
+    is_updated = False
+    updated = db.get_global_info(name='is_updated')
+    if updated[2] == "Updated":
+        is_updated = True
 
-is_updated = False
-updated = db.get_global_info(name='is_updated')
-if updated[2] == "Updated":
-    is_updated = True
+    for sub in subs:
+        user_id, q_id = sub[1], sub[2]
 
-for sub in subs:
-    user_id, q_id = sub[1], sub[2]
+        if q_id not in queues:
+            q_info = db.get_queue(q_id)
+            queues[q_id] = q_info
+        q = queues[q_id]
+        q_name = q[2]
+        current_state = q[4]
+        next_change_mark_is_on = q[6]
+        next_change_time = q[5]
+        if current_state  ==  next_change_mark_is_on:
+            # nothing changing
+            continue
+        notify_minutes = is_need_to_notify(next_change_time, )
+        if notify_minutes:
+            if notification_to_on or next_change_mark_is_on == 0:
+                print("Processing notification...")
+                process_notify(user_id, q_name, next_change_mark_is_on, notify_minutes)
+            else:
+                print("Not notify, ON:", notification_to_on, "next:", next_change_mark_is_on)
+        
+        if is_updated:
+            chnages_notify(user_id, )
+        
+    db.close_connection()
 
-    if q_id not in queues:
-        q_info = db.get_queue(q_id)
-        queues[q_id] = q_info
-    q = queues[q_id]
-    q_name = q[2]
-    current_state = q[4]
-    next_change_mark_is_on = q[6]
-    next_change_time = q[5]
-    if current_state  ==  next_change_mark_is_on:
-        # nothing changing
-        continue
-    notify_minutes = is_need_to_notify(next_change_time, )
-    if notify_minutes:
-        if notification_to_on or next_change_mark_is_on == 0:
-           print("Processing notification...")
-           process_notify(user_id, q_name, next_change_mark_is_on, notify_minutes)
-        else:
-            print("Not notify, ON:", notification_to_on, "next:", next_change_mark_is_on)
-    
-    if is_updated:
-        chnages_notify(user_id, )
-    
-db.close_connection()
+if __name__ == "__main__":
+    run_worker()
