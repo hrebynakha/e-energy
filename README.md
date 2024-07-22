@@ -12,23 +12,7 @@ pip install energybot
 ```
 
 ![energy bot image](./img/Energy-icon-blue.png)
-## Energy providers configuration
 
-**You can add own energy provider**
-
-- create energy provider worker in providers folder for example **poe.py**
-- this provider must contains two function:
-  - **get_queue_info()** - for get current info about queue
-  - **print_queue_info()** for output info about queue to console (for debugging) 
-- provider must use load_data() and save_data() function for bot working correctly with other modules
-- you can use html parce to get info about queue and output this data to dict format like:
-```
-specific_datetime = {
-  'text': 'OFF/ON',
-  'id':n,
-  'value': False/True
-}
-```
 ## Bot configuration
 
 Create .env file
@@ -73,31 +57,51 @@ Start if needed:
 systemctl start energybot.service
 ```
 
-Run worker to process notification and sync to sync information about energy schedule. Schedule it using cron: `crontab -e`
+Run worker to process notification and sync to synchronize information about energy schedule, using cron: `crontab -e`
 ```
 */30 * * * * cd /opt/e-energy/ && venv/bin/energybot --run sync # e-energy sync service
 */15 * * * * cd /opt/e-energy/ && venv/bin/energybot --run worker # e-energy worker service
 ```
+
+## Energy providers configuration
+
+**You can add own energy provider**
+
+- create energy provider worker in providers folder for example **poe.py**
+- this provider must contains two function:
+  - **get_queue_info()** - for get current info about queue
+  - **print_queue_info()** for output info about queue to console (for debugging) 
+- provider must use load_data() and save_data() function for bot working correctly with other modules
+- you can use html parce to get info about queue and output this data to dict format like:
+```
+specific_datetime = {
+  'text': 'OFF/ON',
+  'id':n,
+  'value': False/True
+}
+```
+
 
 
 ## Bot messages and command
 
 
 ### Main bot commands
-`/start` - show satrt information to user with list of queues in databes, user can subsribe to some queue notify using this command
+`/start` - show start information to user with list of queues in database, user can subscribe to some queue notify using this command
 ![start](./img/start.png)
 
 `/remove` - remove notify by queue, show current queue subscribes
 
-`all` - show all information about day energy on\off schedule
+`/all` - show all information about day energy on\off schedule
 ![all](./img/all.png)
 
-`detail` - show detail info (like in energy provider table)
+`/detail` - show detail info (like in energy provider table)
 ![detail](./img/detail.png)
 ...
 
 ### Messages
 
 All base messages described here:
-[messages.py](energybot/helpers/messages.py)
+[messages.py](energybot/helpers/messages.py).
+
 This messages using to send some information to user \ or make notifications
