@@ -11,7 +11,7 @@ Energy bot to work with differents energy providers
 pip install energybot
 ```
 
-![energy bot image](./energybot/img/Energy-icon-blue.png)
+![energy bot image](./img/Energy-icon-blue.png)
 ## Energy providers configuration
 
 **You can add own energy provider**
