@@ -10,7 +10,7 @@ Energy bot to work with differents energy providers
 - create energy provider worker in providers folder for example **poe.py**
 - this provider must contains two function:
   - **get_queue_info()** - for get current info about queue
-  - **print_queue_info()** for prin info about queue to console (for debugging) 
+  - **print_queue_info()** for output info about queue to console (for debugging) 
 - provider must use load_data() and save_data() function for bot working correctly with other modules
 - you can use html parce to get info about queue and output this data to dict format like:
 ```
