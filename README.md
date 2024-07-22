@@ -1,3 +1,7 @@
+> **Warning**
+> Project currently not running and just in development mode
+
+
 Energy bot to work with differents energy providers
 - poe
 - energy_ua (old-version)
@@ -74,3 +78,24 @@ Run worker to process notification and sync to sync information about energy sch
 */30 * * * * cd /opt/e-energy/ && venv/bin/energybot --run sync # e-energy sync service
 */15 * * * * cd /opt/e-energy/ && venv/bin/energybot --run worker # e-energy worker service
 ```
+
+
+## Bot messages and command
+
+
+### Main bot commands
+`/start` - show satrt information to user with list of queues in databes, user can subsribe to some queue notify using this command 
+
+`/remove` - remove notify by queue
+
+...
+
+### Messages
+
+All base messages described here:
+[messages.py](energybot/helpers/messages.py)
+This messages using to send some information to user \ or make notifications
+
+
+
+
