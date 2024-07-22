@@ -4,3 +4,6 @@ venv
 __pycache__
 test.html
 data.bin
+energybot.egg-info
+build
+dist

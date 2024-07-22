@@ -212,5 +212,5 @@ def echo_all(message):
 
 
 if __name__ == '__main__':
-    main()
+    main(args)
     
