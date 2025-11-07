@@ -3,29 +3,16 @@
 # pylint: disable=import-error
 
 from bs4 import BeautifulSoup
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from energybot.helpers.logger import logger
 
-# from energybot.helpers.data import load_data,
 from energybot import config
-
-
-# Specify the path to the chromedriver executable
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--disable-gpu")
-
-
-service = Service(ChromeDriverManager().install())  # Path to your chromedriver
-driver = webdriver.Chrome(service=service, options=chrome_options)
 
 
 OKGREEN = "\033[92m"
@@ -44,6 +31,13 @@ def get_queue_html_info():
     try:
         # Open a web page
         logger.info("Opening web page: %s", url)
+        service = Service()
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        driver = webdriver.Chrome(service=service, options=options)
         driver.get(url)
 
         # Wait for a specific element to be loaded (use appropriate condition and locator)
