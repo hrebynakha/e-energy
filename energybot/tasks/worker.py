@@ -79,7 +79,7 @@ def notify_upcoming_outages():
                 sub.user.username,
             )
             bot.send_message(sub.user.chat_id, msg)
-    logger.info("Notification sent for %s queues", len(slots))
+    logger.info("Notification about upcoming outages sent for %s queues", len(slots))
 
 
 def notify_changed_slots():
@@ -109,7 +109,7 @@ def notify_changed_slots():
                 sub.user.username,
             )
             bot.send_message(sub.user.chat_id, msg, parse_mode="HTML")
-    logger.info("Notification sent for %s queues", len(slots))
+    logger.info("Notification about queue changes sent for %s queues", len(slots))
 
 
 def run_worker():
