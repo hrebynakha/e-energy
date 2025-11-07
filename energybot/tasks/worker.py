@@ -64,6 +64,10 @@ def get_notification_message(queue, slot):
 def notify_upcoming_outages():
     slots = get_upcoming_slots(notification_timeout)
     for queue, slot in slots:
+        current_minutes = get_current_minutes()
+        minutes_difference = slot["start_time_min"] - current_minutes
+        if minutes_difference == 0:
+            continue
         logger.info(
             "Processing notification for queue: %s , state: %s",
             queue.name,
