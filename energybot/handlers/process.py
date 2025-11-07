@@ -1,73 +1,112 @@
-import importlib
-from datetime import datetime, timedelta
-from energybot import config
-from energybot.helpers.data import load_data
+# import importlib
+import os
+import django
+from energybot.helpers.time import convert_minutes_to_hours, get_current_minutes
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "energybot.web.energyweb.settings")
+django.setup()
+
+from energybot.web.core.models import Queue
+from energybot.helpers.messages import STATUS_MAP
 
 
-def get_schedule_message(q_num, hours=4):
-    data = load_data()
-    table = data['table']
-    q_schedul = table[q_num]
-    current_date = datetime.now()
-    not_process_after = current_date + timedelta(hours=hours)
-    q_query = []
-    for time_, value in q_schedul.items():
-        if time_ > current_date:
-            q_query.append((time_, value))
-        if time_ > not_process_after:
-            break
+def get_schedule_detail(queue_id, hours=4):
+    queue = Queue.objects.get(id=queue_id)
+    if not queue:
+        raise ValueError("Queue not found.")
+    if not queue.current_state:
+        raise ValueError("Queue current state not found.")
+
+    schedule = queue.current_state
+    current_minutes = get_current_minutes()
+    not_process_after_minutes = current_minutes + hours * 60
     if hours == 24:
         next_text = ", до кінця поточного дня"
     else:
         next_text = ", на наступні " + str(hours) + " години"
-    message = "<b>Інформація по черзі №" +  str(q_num) + next_text + "</b>\n"
-    start_time, prev_state = q_query[0]
-    output_data = []
-    for time_, energy_state in q_query[1:]:
-        if energy_state['text']  != prev_state['text']:
-            end_time = time_
-            output_data.append((start_time, end_time, prev_state['text']))
-            start_time = time_
-        prev_state = energy_state
+    message = (
+        "<b>Детальна інформація по черзі 🔋" + str(queue.name) + next_text + "</b>\n"
+    )
 
-    output_data.append((start_time, time_, prev_state['text']))
+    for items in schedule:
+        start_time_min = items["start_time_min"]
+        end_time_min = items["end_time_min"]
+        state = items["state"]
 
-    for start_time, end_time, status in output_data:
-        if start_time == end_time:
-            end_time = "?"
-        else:
-            end_time = end_time.strftime("%H:%M")
-        date_str = start_time.strftime("%H:%M") + " - " + end_time
-        if status == 'ON':
-            check_mark = " ✅ Присутнє"
-        else:
-            check_mark = " ❌ Відсутнє"
-        message += "<i>" + date_str + "</i> " + check_mark   + "\n"
+        if start_time_min > current_minutes:
+            date_str = (
+                convert_minutes_to_hours(start_time_min)
+                + " - "
+                + convert_minutes_to_hours(end_time_min)
+            )
+            message += "<i>" + date_str + "</i> " + STATUS_MAP[state] + "\n"
+        if start_time_min > not_process_after_minutes:
+            break
+
     return message
 
 
-def get_schedule_detail(q_num, hours=4):
-    data = load_data()
-    table = data['table']
-    q_schedul = table[q_num]
-    current_date = datetime.now()
-    not_process_after = current_date + timedelta(hours=hours)
-    q_query = []
-    for time_, value in q_schedul.items():
-        if time_ > current_date:
-            q_query.append((time_, value))
-        if time_ > not_process_after:
-            break
+def get_schedule_short(queue_id, hours=4):
+    """
+    Get short grouped schedule for queue.
+    Shows merged time ranges for consecutive slots with same state.
+    Example:
+    13:30 - 20:00  ✅ Присутнє
+    20:00 - 22:30  ❌ Відсутнє
+    22:30 - 23:30  ✅ Присутнє
+    """
+    queue = Queue.objects.get(id=queue_id)
+    if not queue:
+        raise ValueError("Queue not found.")
+    if not queue.current_state:
+        raise ValueError("Queue current state not found.")
+
+    schedule = queue.current_state
+    current_minutes = get_current_minutes()
+    not_process_after_minutes = current_minutes + hours * 60
+
     if hours == 24:
         next_text = ", до кінця поточного дня"
     else:
         next_text = ", на наступні " + str(hours) + " години"
-    message = "<b>Інформація по черзі №" +  str(q_num) + next_text + "</b>\n"
-    for time_, energy_state in q_query:
-        date_str = time_.strftime("%H:%M")
-        if energy_state['text'] == 'ON':
-            check_mark = " ✅ Присутнє"
+
+    message = (
+        "<b>Коротка інформація по черзі 🔋" + str(queue.name) + next_text + "</b>\n"
+    )
+
+    future_slots = [
+        s
+        for s in schedule
+        if s["start_time_min"] >= current_minutes
+        and s["start_time_min"] <= not_process_after_minutes
+    ]
+
+    if not future_slots:
+        message += "Немає запланованих змін."
+        return message
+
+    grouped = []
+    current_group = None
+
+    for s in future_slots:
+        start = s["start_time_min"]
+        end = s["end_time_min"]
+        state = s["state"]
+
+        if current_group is None:
+            current_group = {"start": start, "end": end, "state": state}
+        elif state == current_group["state"]:
+            current_group["end"] = end  # extend same state
         else:
-            check_mark = " ❌ Відсутнє"
-        message += "<i>" + date_str + "</i> -" + check_mark   + "\n"
+            grouped.append(current_group)
+            current_group = {"start": start, "end": end, "state": state}
+
+    if current_group:
+        grouped.append(current_group)
+
+    for g in grouped:
+        start_str = convert_minutes_to_hours(g["start"])
+        end_str = convert_minutes_to_hours(g["end"])
+        message += f"<i>{start_str} - {end_str}</i> {STATUS_MAP[g['state']]}\n"
+
     return message

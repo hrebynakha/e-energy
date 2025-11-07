@@ -1,85 +1,93 @@
-import argparse
-import telebot
-from telebot import types
-from energybot import config
-from energybot.db.sqlite import SQLiteDB
-from energybot.db.init_queue import INIT_QUERIES
-from energybot.helpers import messages
-from energybot.handlers.process import get_schedule_message, get_schedule_detail
-from energybot.tasks.worker import run_worker
-from energybot.tasks.sync import run_sync
+"""Bot file for running bot"""
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--run', help='Enter usage command')
-args = parser.parse_args()
+# pylint: disable=wrong-import-position
+# pylint: disable=import-outside-toplevel
+# pylint: disable=no-member
+
+import os
+
+import django
+import telebot  # pylint: disable=import-error
+from telebot import types  # pylint: disable=import-error
+from energybot import config
+from energybot.helpers.logger import logger
+from energybot.helpers import messages
+from energybot.handlers.process import (
+    get_schedule_detail,
+    get_schedule_short,
+)
+
+# from energybot.tasks.worker import run_worker
+# from energybot.tasks.sync import run_sync
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "energybot.web.energyweb.settings")
+django.setup()
+
+from energybot.web.core.models import ChatUser, Subscription, Queue
+
 
 ADMIN_CHAT_ID = config.ADMIN_CHAT_ID
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
-db = SQLiteDB()
 
-def main(args):
-    if args.run == 'sync':
-        run_sync()
-    elif args.run == 'worker':
-        run_worker()
-    else:
-        db.create_tables()
-        bot.infinity_polling()
-        db.close_connection()
 
-def check_permissisons(chat_id, permission_requried):
-    if permission_requried == 'admin':
+def check_permissions(chat_id, permission_required):
+    """Check permissions for user"""
+    if permission_required == "admin":
         if str(chat_id) == ADMIN_CHAT_ID:
             return True
-    raise Exception("User not have permission.")
+        logger.warning("User %s not have permission %s", chat_id, permission_required)
+    raise ValueError("User not have permission.")
 
-def get_chat(message):
-    chat = db.get_user_by_chat_id(message.chat.id)
-    if not chat:
-        chat = db.create_user(
-            message.chat.id, message.chat.username,
-            message.chat.first_name, message.chat.last_name
-        )
-    return chat
 
-def new_sub(q, user):
-    db.new_subscribe(q[0], user[0])
+def get_chat_user(message):
+    """Get or create ChatUser from Telegram message"""
+    user, created = ChatUser.objects.get_or_create(
+        chat_id=message.chat.id,
+        defaults={
+            "username": message.chat.username,
+            "first_name": message.chat.first_name,
+            "last_name": message.chat.last_name,
+        },
+    )
 
-def add_queue_reply_keyboard():
+    if not created:
+        updated = False
+        if user.username != message.chat.username:
+            user.username = message.chat.username
+            updated = True
+        if user.first_name != message.chat.first_name:
+            user.first_name = message.chat.first_name
+            updated = True
+        if user.last_name != message.chat.last_name:
+            user.last_name = message.chat.last_name
+            updated = True
+        if updated:
+            user.save()
+    return user
+
+
+def new_sub(queue, chat_user):
+    """Add new subscription"""
+    Subscription.objects.create(
+        queue_id=queue.id,
+        user_id=chat_user.id,
+    )
+
+
+def add_queue_reply_keyboard(user_id):
+    """Add queue reply keyboard"""
     keyboard = types.InlineKeyboardMarkup()
-    queues = db.get_queues()
+    queues = Queue.objects.all()
+    subs = Subscription.objects.filter(user_id=user_id)
     buttons = []
     for queue in queues:
-        callback_data = 'add_queue_' + str(queue[0])
-        button = types.InlineKeyboardButton(queue[2], callback_data=callback_data)
-        buttons.append(button)
-
-    num_buttons = len(buttons)
-    num_full_rows = num_buttons // 3
-
-    # Add buttons in rows of three
-    for i in range(num_full_rows):
-        keyboard.add(buttons[i*3], buttons[i*3 + 1], buttons[i*3 + 2])
-    
-    # Add any remaining buttons (less than a full row)
-    if num_buttons % 3 == 1:
-        keyboard.add(buttons[num_buttons - 1])
-    elif num_buttons % 3 == 2:
-        keyboard.add(buttons[num_buttons - 2], buttons[num_buttons - 1])
-    return keyboard
-
-def remove_sub_reply_keyboard(user_id):
-    keyboard = types.InlineKeyboardMarkup()
-    subs = db.get_subs_by_user(user_id)
-    buttons = []
-    if not subs:
-        return None
-
-    for sub in subs :
-        callback_data = 'remove_sub_' + str(sub[0])
-        queue = db.get_queue(queue_id=sub[2])
-        name = queue[2] + " " + messages.X_MARK
+        callback_data = "add_queue_" + str(queue.id)
+        name = (
+            queue.name + " " + messages.CHECK_MARK
+            if queue.id in subs.values_list("queue_id", flat=True)
+            else queue.name
+        )
         button = types.InlineKeyboardButton(name, callback_data=callback_data)
         buttons.append(button)
 
@@ -88,8 +96,8 @@ def remove_sub_reply_keyboard(user_id):
 
     # Add buttons in rows of three
     for i in range(num_full_rows):
-        keyboard.add(buttons[i*3], buttons[i*3 + 1], buttons[i*3 + 2])
-    
+        keyboard.add(buttons[i * 3], buttons[i * 3 + 1], buttons[i * 3 + 2])
+
     # Add any remaining buttons (less than a full row)
     if num_buttons % 3 == 1:
         keyboard.add(buttons[num_buttons - 1])
@@ -97,120 +105,156 @@ def remove_sub_reply_keyboard(user_id):
         keyboard.add(buttons[num_buttons - 2], buttons[num_buttons - 1])
     return keyboard
 
-@bot.message_handler(commands=['start', 'hello'])
+
+def remove_sub_reply_keyboard(user_id):
+    """Remove subscription reply keyboard"""
+    keyboard = types.InlineKeyboardMarkup()
+    subs = Subscription.objects.filter(user_id=user_id)
+    buttons = []
+    if not subs:
+        return None
+
+    for sub in subs:
+        callback_data = "remove_sub_" + str(sub.id)
+        queue = Queue.objects.get(id=sub.queue_id)
+        name = queue.name + " " + messages.X_MARK
+        button = types.InlineKeyboardButton(name, callback_data=callback_data)
+        buttons.append(button)
+
+    num_buttons = len(buttons)
+    num_full_rows = num_buttons // 3
+
+    # Add buttons in rows of three
+    for i in range(num_full_rows):
+        keyboard.add(buttons[i * 3], buttons[i * 3 + 1], buttons[i * 3 + 2])
+
+    # Add any remaining buttons (less than a full row)
+    if num_buttons % 3 == 1:
+        keyboard.add(buttons[num_buttons - 1])
+    elif num_buttons % 3 == 2:
+        keyboard.add(buttons[num_buttons - 2], buttons[num_buttons - 1])
+    return keyboard
+
+
+@bot.message_handler(commands=["start", "hello"])
 def send_welcome(message):
-    chat = get_chat(message)
-    keyboard = add_queue_reply_keyboard()
+    """Send welcome message"""
+    chat_user = get_chat_user(message)
+    keyboard = add_queue_reply_keyboard(chat_user.id)
     bot.send_message(message.chat.id, messages.WELCOME, reply_markup=keyboard)
 
 
-@bot.message_handler(commands=['subs', 'remove'])
+@bot.message_handler(commands=["subs", "remove"])
 def send_subscribe(message):
-    chat = get_chat(message)
-    keyboard = remove_sub_reply_keyboard(str(chat[0]))
+    """Send subscribe message"""
+    chat_user = get_chat_user(message)
+    keyboard = remove_sub_reply_keyboard(chat_user.id)
     if not keyboard:
-        bot.send_message(message.chat.id, messages.NONE_SUBSCRIBE_TEXT)
+        bot.send_message(chat_user.chat_id, messages.NONE_SUBSCRIBE_TEXT)
     else:
-        bot.send_message(message.chat.id, messages.UNSUBSCRIBE_TEXT, reply_markup=keyboard)
-
-@bot.message_handler(commands=['update'])
-def send_update(message):
-    check_permissisons(message.chat.id, 'admin')
-    chat = get_chat(message)
-    for query in INIT_QUERIES:
-        db.run_query(query)
-    bot.reply_to(message, messages.ADMIN_UPDATE)
-
-@bot.message_handler(commands=['sql'])
-def send_sql(message):
-    check_permissisons(message.chat.id, 'admin')
-    chat = get_chat(message)
-    sql_text = message.text[4:]
-    try:
-        info = db.run_query(sql_text)
-        result = "<code>" + str(info) + "</code>\n"
-        msg = messages.ADMIN_RUN
-    except Exception as e:
-        result = "<code>" + str(e) + "</code>\n"
-        msg = messages.ADMIN_FAIL
-    bot.reply_to(message, result + msg, parse_mode='html')
+        bot.send_message(
+            chat_user.chat_id, messages.UNSUBSCRIBE_TEXT, reply_markup=keyboard
+        )
 
 
-@bot.message_handler(commands=['show'])
+@bot.message_handler(commands=["show"])
 def send_schedule(message):
-    chat = get_chat(message)
-    user_id = str(chat[0])
-    subs = db.get_subs_by_user(user_id)
+    """Send schedule message"""
+    chat_user = get_chat_user(message)
+    subs = Subscription.objects.filter(user_id=chat_user.id)
     for sub in subs:
-        sub_id, _, sub_q_name = sub
-        msg = get_schedule_message(str(sub_q_name))
-        bot.reply_to(message, msg, parse_mode='html')
+        try:
+            msg = get_schedule_short(sub.queue_id)
+            bot.reply_to(message, msg, parse_mode="html")
+        except Exception as e:
+            logger.error("Error getting schedule short message: %s", e)
+            bot.reply_to(message, messages.ERROR, parse_mode="html")
 
-@bot.message_handler(commands=['detail'])
-def send_schedule_detail(message):
-    chat = get_chat(message)
-    user_id = str(chat[0])
-    subs = db.get_subs_by_user(user_id)
-    for sub in subs:
-        sub_id, _, sub_q_name = sub
-        msg = get_schedule_detail(str(sub_q_name))
-        bot.reply_to(message, msg, parse_mode='html')
 
-@bot.message_handler(commands=['all'])
+@bot.message_handler(commands=["all"])
 def send_schedule_all(message):
-    chat = get_chat(message)
-    user_id = str(chat[0])
-    subs = db.get_subs_by_user(user_id)
+    """Send schedule all message"""
+    chat_user = get_chat_user(message)
+    subs = Subscription.objects.filter(user_id=chat_user.id)
     for sub in subs:
-        sub_id, _, sub_q_name = sub
-        msg = get_schedule_message(str(sub_q_name), hours=24)
-        bot.reply_to(message, msg, parse_mode='html')
+        try:
+            msg = get_schedule_short(sub.queue_id, hours=24)
+            bot.reply_to(message, msg, parse_mode="html")
+        except Exception as e:
+            logger.error("Error getting schedule short all message: %s", e)
+            bot.reply_to(message, messages.ERROR, parse_mode="html")
 
-@bot.message_handler(commands=['detailall'])
-def send_schedule_detailall(message):
-    chat = get_chat(message)
-    user_id = str(chat[0])
-    subs = db.get_subs_by_user(user_id)
+
+@bot.message_handler(commands=["detail"])
+def send_schedule_detail(message):
+    """Send schedule detail message"""
+    chat_user = get_chat_user(message)
+    subs = Subscription.objects.filter(user_id=chat_user.id)
     for sub in subs:
-        sub_id, _, sub_q_name = sub
-        msg = get_schedule_detail(str(sub_q_name), hours=24)
-        bot.reply_to(message, msg, parse_mode='html')
+        try:
+            msg = get_schedule_detail(sub.queue_id)
+            bot.reply_to(message, msg, parse_mode="html")
+        except Exception as e:
+            logger.error("Error getting schedule detail message: %s", e)
+            bot.reply_to(message, messages.ERROR, parse_mode="html")
+
+
+@bot.message_handler(commands=["detailall"])
+def send_schedule_detail_all(message):
+    """Send schedule detail all message"""
+    chat_user = get_chat_user(message)
+    subs = Subscription.objects.filter(user_id=chat_user.id)
+    for sub in subs:
+        try:
+            msg = get_schedule_detail(sub.queue_id, hours=24)
+            bot.reply_to(message, msg, parse_mode="html")
+        except Exception as e:
+            logger.error("Error getting schedule detail all message: %s", e)
+            bot.reply_to(message, messages.ERROR, parse_mode="html")
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
-    if call.data.startswith('add_queue_'):
-        queue_id = call.data.split('_')[2]
-        queue = db.get_queue(queue_id)
-        chat = get_chat(call.message)
-        if not chat:
-            print("Chat not found by call", call)
-        sub = db.get_sub_by_user_q(chat[0], queue[0])
+    """Callback handler"""
+    chat_user = get_chat_user(call.message)
+    if not chat_user:
+        logger.error("Chat user %s not found by call %s", chat_user, call)
+        return
+    if call.data.startswith("add_queue_"):
+        queue_id = call.data.split("_")[2]
+        queue = Queue.objects.get(id=queue_id)
+        sub = Subscription.objects.filter(user_id=chat_user.id, queue_id=queue_id)
         if sub:
-            reply_text = messages.ALREDY_SUBSCRIBE_TEXT + '. ' + messages.SUB_COMMAND_TEXT
-            bot.send_message(call.message.chat.id, reply_text)
+            reply_text = (
+                messages.ALREADY_SUBSCRIBE_TEXT + ". " + messages.SUB_COMMAND_TEXT
+            )
+            bot.send_message(chat_user.chat_id, reply_text)
         else:
-            new_sub(queue, chat)
-            reply_text = messages.SUBSCRIBE_TEXT + ' ' + queue[2] + '. ' + messages.SUB_COMMAND_TEXT 
-            bot.send_message(call.message.chat.id, reply_text)
+            new_sub(queue, chat_user)
+            reply_text = (
+                messages.SUBSCRIBE_TEXT
+                + " "
+                + queue.name
+                + ". "
+                + messages.SUB_COMMAND_TEXT
+            )
+            logger.info("Send message to user %s", chat_user.chat_id)
+            bot.send_message(chat_user.chat_id, reply_text)
 
-    elif call.data.startswith('remove_sub_'):
-        sub_id = call.data.split('_')[2]
-        sub = db.get_sub(sub_id)
+    elif call.data.startswith("remove_sub_"):
+        sub_id = call.data.split("_")[2]
+        sub = Subscription.objects.filter(id=sub_id).first()
         if sub:
-            queue = db.get_queue(sub[2])
-            db.delete_sub(sub_id)
-            reply_text = messages.UNSUBSCRIBED + ' ' + queue[2] + '.'
+            queue = Queue.objects.get(id=sub.queue_id)
+            sub.delete()
+            reply_text = messages.UNSUBSCRIBED + " " + queue.name + "."
         else:
             reply_text = messages.NOT_UNSUBSCRIBED
-        bot.send_message(call.message.chat.id, reply_text)
+        bot.send_message(chat_user.chat_id, reply_text)
 
 
 @bot.message_handler(func=lambda msg: True)
 def echo_all(message):
-    chat = get_chat(message)
+    """Echo all message"""
+    get_chat_user(message)
     bot.reply_to(message, message.text)
-
-
-if __name__ == '__main__':
-    main(args)
-    

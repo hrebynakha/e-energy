@@ -1,8 +1,8 @@
-> **Warning**
-> Project currently not running and just in development mode
+## **Warning**
+Project currently not running and just in development mode
 
 
-Energy bot to work with differents energy providers
+Energy bot to work with different energy providers
 - poe
 - energy_ua (old-version)
 ## Simple installation via **pypip**
@@ -27,7 +27,7 @@ PROVIDER_URL=
 
 Run **bot** as service for pooling
 
-Loggin as root to the VM:
+Log in as root to the VM:
   `systemctl edit --force --full energybot.service`
 
 create this unit:

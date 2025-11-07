@@ -1,42 +1,42 @@
-from datetime import datetime
-import importlib
-from energybot.db.sqlite import SQLiteDB
-from energybot import config
+"""Sync task file for running Q sync"""
 
-provider_module_name = f"providers.{config.PROVIDER}"
-provider = importlib.import_module(provider_module_name)
+import os
+import importlib
+import django
+from energybot import config
+from energybot.helpers.logger import logger
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "energybot.web.energyweb.settings")
+django.setup()
+
+from energybot.web.core.models import Queue
+
+PROVIDER_MODULE_NAME = f"providers.{config.PROVIDER}"
+provider = importlib.import_module(PROVIDER_MODULE_NAME)
 DEBUG = config.DEBUG
 
-current_date = datetime.now()
 
-def find_next_change_time(q):
-    for time_ in q:
-        if time_ > current_date:
-            break
-        prev_time = time_
-    return time_, prev_time
+def update_db_queues(queues_info):
+    """Update queues in database"""
+    for q in queues_info:
+        if not Queue.objects.filter(name=q["queue_name"]).exists():
+            Queue.objects.create(name=q["queue_name"])
+        queue = Queue.objects.get(name=q["queue_name"])
+        current_state = queue.current_state
+        queue.prev_state = current_state
+        queue.current_state = q["slots"]
+        queue.save()
 
 
 def run_sync():
-    db = SQLiteDB()
-    db.create_tables()
-    queues = db.get_queues()
-    queues_info, is_updated = provider.get_queue_info()
-    if is_updated:
-        db.set_global_info(new_value='Updated', name='is_updated')
-    else:
-        db.set_global_info(new_value='Not updated', name='is_updated')
-    for q in queues:
-        q_num = str(q[1])
-        queue_info = queues_info[q_num]
-        next_time_, curent_time_= find_next_change_time(queue_info)
-        if DEBUG:
-            print(20*"=", q_num + 20*"=")
-            provider.print_queue_info(queues_info, q_num)
-        state = queue_info[next_time_]
-        state_now = queue_info[curent_time_]
-        db.update_queue(next_time_ , state['value'], curent_time_, state_now['value'], q_num)
-    db.close_connection()
+    """Run sync"""
+    try:
+        queues_info = provider.get_queue_info()
+        update_db_queues(queues_info)
+        logger.info("Updated queues in database")
+    except Exception as e:
+        logger.error("Error updating queues in database: %s", e)
+
 
 if __name__ == "__main__":
     run_sync()

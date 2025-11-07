@@ -7,3 +7,8 @@ data.bin
 energybot.egg-info
 build
 dist
+energybot.db
+__dbpycache__
+*.log
+*_old.py
+.vscode
