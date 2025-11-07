@@ -141,6 +141,11 @@ def send_welcome(message):
     """Send welcome message"""
     chat_user = get_chat_user(message)
     keyboard = add_queue_reply_keyboard(chat_user.id)
+    logger.info(
+        "Send welcome message to user %s %s",
+        chat_user.chat_id,
+        chat_user.username,
+    )
     bot.send_message(message.chat.id, messages.WELCOME, reply_markup=keyboard)
 
 
@@ -150,8 +155,18 @@ def send_subscribe(message):
     chat_user = get_chat_user(message)
     keyboard = remove_sub_reply_keyboard(chat_user.id)
     if not keyboard:
+        logger.info(
+            "Send message about unsubscribe text to user %s %s",
+            chat_user.chat_id,
+            chat_user.username,
+        )
         bot.send_message(chat_user.chat_id, messages.NONE_SUBSCRIBE_TEXT)
     else:
+        logger.info(
+            "Send message about unsubscribe to user %s %s",
+            chat_user.chat_id,
+            chat_user.username,
+        )
         bot.send_message(
             chat_user.chat_id, messages.UNSUBSCRIBE_TEXT, reply_markup=keyboard
         )
@@ -168,6 +183,11 @@ def send_schedule(message):
             bot.reply_to(message, msg, parse_mode="html")
         except Exception as e:
             logger.error("Error getting schedule short message: %s", e)
+            logger.info(
+                "Send error message about schedule short to user %s %s",
+                chat_user.chat_id,
+                chat_user.username,
+            )
             bot.reply_to(message, messages.ERROR, parse_mode="html")
 
 
@@ -182,6 +202,11 @@ def send_schedule_all(message):
             bot.reply_to(message, msg, parse_mode="html")
         except Exception as e:
             logger.error("Error getting schedule short all message: %s", e)
+            logger.info(
+                "Send error message about schedule short all to user %s %s",
+                chat_user.chat_id,
+                chat_user.username,
+            )
             bot.reply_to(message, messages.ERROR, parse_mode="html")
 
 
@@ -196,6 +221,11 @@ def send_schedule_detail(message):
             bot.reply_to(message, msg, parse_mode="html")
         except Exception as e:
             logger.error("Error getting schedule detail message: %s", e)
+            logger.info(
+                "Send error message about schedule detail to user %s %s",
+                chat_user.chat_id,
+                chat_user.username,
+            )
             bot.reply_to(message, messages.ERROR, parse_mode="html")
 
 
@@ -210,6 +240,11 @@ def send_schedule_detail_all(message):
             bot.reply_to(message, msg, parse_mode="html")
         except Exception as e:
             logger.error("Error getting schedule detail all message: %s", e)
+            logger.info(
+                "Send error message about schedule detail all to user %s %s",
+                chat_user.chat_id,
+                chat_user.username,
+            )
             bot.reply_to(message, messages.ERROR, parse_mode="html")
 
 
@@ -238,7 +273,11 @@ def callback_handler(call):
                 + ". "
                 + messages.SUB_COMMAND_TEXT
             )
-            logger.info("Send message to user %s", chat_user.chat_id)
+            logger.info(
+                "Send message about subscription to user %s %s",
+                chat_user.chat_id,
+                chat_user.username,
+            )
             bot.send_message(chat_user.chat_id, reply_text)
 
     elif call.data.startswith("remove_sub_"):
@@ -250,6 +289,11 @@ def callback_handler(call):
             reply_text = messages.UNSUBSCRIBED + " " + queue.name + "."
         else:
             reply_text = messages.NOT_UNSUBSCRIBED
+        logger.info(
+            "Send message about un subscription to user %s %s",
+            chat_user.chat_id,
+            chat_user.username,
+        )
         bot.send_message(chat_user.chat_id, reply_text)
 
 
