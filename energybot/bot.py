@@ -301,4 +301,5 @@ def callback_handler(call):
 def echo_all(message):
     """Echo all message"""
     get_chat_user(message)
-    bot.reply_to(message, message.text)
+    msg = f"{messages.NO_COMMAND_BEFORE} {message.text} {messages.NO_COMMAND_AFTER}"
+    bot.reply_to(message, msg)
