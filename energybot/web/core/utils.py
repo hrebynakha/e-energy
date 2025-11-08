@@ -31,7 +31,7 @@ def get_upcoming_slots(minutes_ahead=15):
 def get_changed_slots():
     tz = ZoneInfo("Europe/Kyiv")
     now = datetime.now(tz)
-    now_min = minutes_since_midnight(now)
+    now_min = minutes_since_midnight(now) + 1
 
     changed = []
 
