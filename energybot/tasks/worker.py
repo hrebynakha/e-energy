@@ -75,14 +75,17 @@ def notify_upcoming_outages():
         )
         subs = Subscription.objects.filter(queue=queue)
         for sub in subs:
-            msg = get_notification_message(queue, slot)
-            logger.info(
-                "Sending notification to %s: %s, user: %s",
-                sub.user.chat_id,
-                msg,
-                sub.user.username,
-            )
-            bot.send_message(sub.user.chat_id, msg)
+            try:
+                msg = get_notification_message(queue, slot)
+                logger.info(
+                    "Sending notification to %s: %s, user: %s",
+                    sub.user.chat_id,
+                    msg,
+                    sub.user.username,
+                )
+                bot.send_message(sub.user.chat_id, msg)
+            except Exception as e:
+                logger.error("Failed to send notification to %s: %s", sub.user.chat_id, e)
     logger.info("Notification about upcoming outages sent for %s queues", len(slots))
 
 
@@ -112,7 +115,10 @@ def notify_changed_slots():
                 sub.user.chat_id,
                 sub.user.username,
             )
-            bot.send_message(sub.user.chat_id, msg, parse_mode="HTML")
+            try:
+                bot.send_message(sub.user.chat_id, msg, parse_mode="HTML")
+            except Exception as e:
+                logger.error("Failed to send notification to %s: %s", sub.user.chat_id, e)
     logger.info("Notification about queue changes sent for %s queues", len(slots))
 
 
