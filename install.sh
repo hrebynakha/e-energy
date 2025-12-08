@@ -3,6 +3,7 @@ pip install -r requirements.txt
 cp .env.example .env
 python main.py --run makemigrations
 python main.py --run migrate
+python main.py --run collectstatic
 
 
 
@@ -24,10 +25,30 @@ sudo sed -i "s/server_domain_or_IP/$IP/g" /etc/nginx/conf.d/e-energy.conf
 sudo systemctl start gunicorn.socket
 sudo systemctl enable gunicorn.socket
 
-
+echo "Starting nginx and gunicorn services ..."
 
 sudo nginx -t
 sudo systemctl restart nginx
+sudo systemctl restart gunicorn.socket
+sudo systemctl restart gunicorn.service
+
+echo "Adding cron jobs ..."
+
+LINE1="*/30 * * * * /opt/e-energy/venv/bin/python /opt/e-energy/main.py --run sync # e-energy sync service"
+LINE2="*/15 * * * * /opt/e-energy/venv/bin/python /opt/e-energy/main.py --run worker # e-energy worker service"
+
+(crontab -l 2>/dev/null; echo "$LINE1"; echo "$LINE2") | crontab -
+
+
 
 echo "Installation completed successfully!"
-echo "Got to http://$IP to see the result"
+
+
+echo "Trigger sync service ..."
+main.py --run sync
+
+
+echo "Trigger worker service ..."
+main.py --run worker
+
+echo "Go to http://$IP to see the result"
