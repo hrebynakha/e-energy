@@ -1,9 +1,9 @@
 sudo apt install -y build-essential python3-dev libxml2-dev libxslt1-dev
 pip install -r requirements.txt 
+cp .env.example .env
 python main.py --run makemigrations
 python main.py --run migrate
 
-cp .env.example .env
 
 
 sudo apt install nginx
