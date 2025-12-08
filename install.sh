@@ -52,3 +52,7 @@ echo "Trigger worker service ..."
 main.py --run worker
 
 echo "Go to http://$IP to see the result"
+
+echo "WARNING: Edit the .env file to configure bot token and admin chat id and re-run workers (or wait for cron jobs)"
+echo "WARNING: This project is in development mode and not ready for production use"
+echo "Please use it at your own risk"
