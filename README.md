@@ -1,21 +1,37 @@
 ## **Warning**
+
 Project currently not running and just in development mode
 
-
 Energy bot to work with different energy providers
+
 - poe
 - energy_ua (old-version)
-## Simple installation via **pypip**
+
+## Prerequisites
+
+Clone project to the /opt folder
+Create virtual environment in the /opt/e-energy folder
+
+In the /opt/e-energy folder create virtual environment and activate it
 
 ```
-pip install energybot
+sudo apt install python3.13-venv
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-![energy bot image](./img/Energy-icon-blue.png)
+After activation run the install.sh script
+
+```
+sh install.sh
+```
 
 ## Bot configuration
 
-Create .env file
+![energy bot image](./img/Energy-icon-blue.png)
+
+Edit .env file
+
 ```
 BOT_TOKEN=token
 ADMIN_CHAT_ID=adminid
@@ -25,68 +41,10 @@ PROVIDER=
 PROVIDER_URL=
 ```
 
-Run **bot** as service for pooling
-
-Log in as root to the VM:
-  `systemctl edit --force --full energybot.service`
-
-create this unit:
-```
-[Unit]
-Description=E-Energy Bot Service
-Wants=network.target
-After=network.target
-
-[Service]
-WorkingDirectory=/opt/e-energy
-ExecStartPre=/bin/sleep 1
-ExecStart=/opt/e-energy/venv/bin/energybot
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-
-```
-Eneable service:
-`systemctl enable energybot.service`
-Check status:
-`systemctl status energybot.service`
-Start if needed:
-
-```
-systemctl start energybot.service
-```
-
-Run worker to process notification and sync to synchronize information about energy schedule, using cron: `crontab -e`
-```
-*/30 * * * * cd /opt/e-energy/ && venv/bin/energybot --run sync # e-energy sync service
-*/15 * * * * cd /opt/e-energy/ && venv/bin/energybot --run worker # e-energy worker service
-```
-
-## Energy providers configuration
-
-**You can add own energy provider**
-
-- create energy provider worker in providers folder for example **poe.py**
-- this provider must contains two function:
-  - **get_queue_info()** - for get current info about queue
-  - **print_queue_info()** for output info about queue to console (for debugging) 
-- provider must use load_data() and save_data() function for bot working correctly with other modules
-- you can use html parce to get info about queue and output this data to dict format like:
-```
-specific_datetime = {
-  'text': 'OFF/ON',
-  'id':n,
-  'value': False/True
-}
-```
-
-
-
 ## Bot messages and command
 
-
 ### Main bot commands
+
 `/start` - show start information to user with list of queues in database, user can subscribe to some queue notify using this command
 ![start](./img/start.png)
 
@@ -106,8 +64,8 @@ All base messages described here:
 
 This messages using to send some information to user \ or make notifications
 
-
 ## Contributing
+
 - Fork the repository.
 - Create a new branch (git checkout -b feature-branch).
 - Commit your changes (git commit -am 'Add some feature').
