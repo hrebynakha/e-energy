@@ -1,4 +1,7 @@
 sudo apt install -y build-essential python3-dev libxml2-dev libxslt1-dev
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i google-chrome-stable_current_amd64.deb
+sudo apt -f install -y
 pip install -r requirements.txt 
 cp .env.example .env
 python main.py --run makemigrations
