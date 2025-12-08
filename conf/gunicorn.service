@@ -1,0 +1,17 @@
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/opt/e-energy
+ExecStart=/opt/e-energy/venv/bin/gunicorn \
+          --access-logfile - \
+          --workers 3 \
+          --bind unix:/run/gunicorn.sock \
+          main.energybot.web.energyweb.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
