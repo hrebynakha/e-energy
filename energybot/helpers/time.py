@@ -9,6 +9,6 @@ def convert_minutes_to_hours(minutes):
 
 
 def get_current_minutes():
-    timezone = ZoneInfo("Europe/Kiev")
+    timezone = ZoneInfo("Europe/Kyiv")
     now = datetime.now(tz=timezone)
     return now.hour * 60 + now.minute
