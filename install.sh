@@ -53,7 +53,7 @@ main.py --run worker
 
 
 
-python energybot/web/manage.py shell <<EOF
+python main.py --run shell <<EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
