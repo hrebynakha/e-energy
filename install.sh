@@ -37,13 +37,15 @@ sudo systemctl restart gunicorn.service
 
 echo "Adding cron jobs ..."
 
-LINE1="*/30 * * * * /opt/e-energy/venv/bin/python /opt/e-energy/main.py --run sync # e-energy sync service"
-LINE2="*/15 * * * * /opt/e-energy/venv/bin/python /opt/e-energy/main.py --run worker # e-energy worker service"
+LINE1="*/30 * * * * cd /opt/e-energy/ && /opt/e-energy/venv/bin/python /opt/e-energy/main.py --run sync # e-energy sync service"
+LINE2="*/15 * * * * cd /opt/e-energy/ && /opt/e-energy/venv/bin/python /opt/e-energy/main.py --run worker # e-energy worker service"
 
-(crontab -l 2>/dev/null; echo "$LINE1"; echo "$LINE2") | crontab -
-
-
-
+(crontab -l 2>/dev/null | grep -Fx "$LINE1" >/dev/null) || \
+    (crontab -l 2>/dev/null; echo "$LINE1") | crontab -
+    
+(crontab -l 2>/dev/null | grep -Fx "$LINE2" >/dev/null) || \
+    (crontab -l 2>/dev/null; echo "$LINE2") | crontab -
+    
 echo "Installation completed successfully!"
 
 
