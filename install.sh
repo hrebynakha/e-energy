@@ -7,6 +7,7 @@ python main.py --run migrate
 
 
 sudo apt install nginx
+pip install gunicorn
 
 cp conf/gunicorn.socket /etc/systemd/system/gunicorn.socket
 cp conf/gunicorn.service /etc/systemd/system/gunicorn.service
